@@ -32,6 +32,9 @@
     selectedVideoDeviceId,
     selectedAudioDeviceId,
     enableMic,
+    activePeerCalls,
+    peerIdToClientId,
+    peerBitrates,
   } = useBroadcast();
   const { copy, isSupported } = useClipboard();
   const { success } = useToastStore();
@@ -221,6 +224,26 @@
               </div>
             </div>
           </div>
+        </fieldset>
+        <!-- Connection -->
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">{{ t('BROADCAST_CONNECTION') }}</legend>
+          <span class="text-xs mt-1">
+            {{ t('BROADCAST_PEER_CONNECTIONS') }}:
+            <span class="text-orange-500 font-semibold">{{ Object.keys(activePeerCalls).length }}</span>
+          </span>
+          <ul v-if="Object.keys(activePeerCalls).length" class="text-xs mt-1 list-disc list-inside">
+            <li v-for="peerId in Object.keys(activePeerCalls)" :key="peerId">
+              <span>{{ peerIdToClientId[peerId] || peerId }}</span>
+              <span class="text-gray-600">
+                - {{ t('BROADCAST_UPLOAD_BITRATE') }}:
+                <span class="text-orange-500 font-semibold">
+                  {{ ((peerBitrates[peerId] || 0) / 1000).toFixed(1) }}
+                </span>
+                kbps
+              </span>
+            </li>
+          </ul>
         </fieldset>
       </div>
     </div>

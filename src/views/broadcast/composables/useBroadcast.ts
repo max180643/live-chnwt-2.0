@@ -35,10 +35,14 @@ function useBroadcast(): Broadcast {
   const selectedAudioDeviceId: Ref<string> = ref('');
   const enableMic: Ref<boolean> = ref(false);
   const activePeerCalls: Ref<Record<string, MediaConnection>> = ref({});
+  const peerIdToClientId: Ref<Record<string, string>> = ref({});
+  const peerBitrates: Ref<Record<string, number>> = ref({});
 
   let audioContexts: AudioContext[] = [];
   let analyserNodes: AnalyserNode[] = [];
   let animationFrame: number;
+  let bitrateIntervals: Record<string, number> = {};
+  let lastStats: Record<string, { bytesSent: number; timestamp: number }> = {};
 
   const getMicrophoneMediaStream = async (audioDeviceId: string): Promise<MediaStream | null> => {
     try {
@@ -252,15 +256,45 @@ function useBroadcast(): Broadcast {
       const pattern = /^stream:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (pattern.test(incoming.message) && streamStatus.value === 'live') {
         const peerId = incoming.message.replace('stream:', '');
+        peerIdToClientId.value[peerId] = incoming.clientId;
         broadcastStreamToPeer(peerId);
       }
     }
+  };
+
+  const handlePeerCallEvent = (peerId: string, call: MediaConnection) => {
+    call.on('close', () => {
+      // Delete call from activePeerCalls
+      delete activePeerCalls.value[peerId];
+      // Delete interval for this peer
+      if (bitrateIntervals[peerId]) {
+        clearInterval(bitrateIntervals[peerId]);
+        delete bitrateIntervals[peerId];
+      }
+      // Delete lastStats and peerBitrates
+      delete lastStats[peerId];
+      delete peerBitrates.value[peerId];
+    });
+
+    call.on('error', () => {
+      // Delete call from activePeerCalls
+      delete activePeerCalls.value[peerId];
+      // Delete interval for this peer
+      if (bitrateIntervals[peerId]) {
+        clearInterval(bitrateIntervals[peerId]);
+        delete bitrateIntervals[peerId];
+      }
+      // Delete lastStats and peerBitrates
+      delete lastStats[peerId];
+      delete peerBitrates.value[peerId];
+    });
   };
 
   const broadcastStreamToPeer = (peerId: string) => {
     if (peerClient.value && streamMixedContent.value) {
       const call = peerClient.value.call(peerId, streamMixedContent.value);
       activePeerCalls.value[peerId] = call;
+      handlePeerCallEvent(peerId, call);
     }
   };
 
@@ -321,6 +355,38 @@ function useBroadcast(): Broadcast {
     streamStatus.value = 'offline';
   };
 
+  const startBitrateMonitor = () => {
+    Object.entries(activePeerCalls.value).forEach(([peerId, call]) => {
+      if (bitrateIntervals[peerId]) return;
+      const bitrateInterval = window.setInterval(async () => {
+        const stats = await call.peerConnection.getStats();
+        stats.forEach((report: any) => {
+          if (report.type === 'outbound-rtp' && report.kind === 'video' && report.bytesSent !== undefined) {
+            const now = Date.now();
+            if (!lastStats[peerId]) {
+              lastStats[peerId] = { bytesSent: report.bytesSent, timestamp: now };
+              peerBitrates.value[peerId] = 0;
+            } else {
+              const timeDiff = (now - lastStats[peerId].timestamp) / 1000; // seconds
+              const bytesDiff = report.bytesSent - lastStats[peerId].bytesSent;
+              if (timeDiff > 0) {
+                peerBitrates.value[peerId] = (bytesDiff * 8) / timeDiff; // bits per second
+              }
+              lastStats[peerId] = { bytesSent: report.bytesSent, timestamp: now };
+            }
+          }
+        });
+      }, 1000);
+      bitrateIntervals[peerId] = bitrateInterval;
+    });
+  };
+
+  const stopBitrateMonitor = () => {
+    Object.values(bitrateIntervals).forEach(clearInterval);
+    bitrateIntervals = {};
+    lastStats = {};
+  };
+
   onMounted(() => {
     roomId.value = getRoomId();
     streamUrl.value = getStreamUrl(roomId.value);
@@ -333,6 +399,8 @@ function useBroadcast(): Broadcast {
   });
 
   onUnmounted(() => {
+    stopBitrateMonitor();
+
     window.removeEventListener('beforeunload', stopLiveStream);
   });
 
@@ -404,6 +472,14 @@ function useBroadcast(): Broadcast {
     { immediate: true },
   );
 
+  watch(
+    activePeerCalls,
+    () => {
+      startBitrateMonitor();
+    },
+    { immediate: true, deep: true },
+  );
+
   return {
     clientId,
     roomId,
@@ -425,6 +501,9 @@ function useBroadcast(): Broadcast {
     selectedVideoDeviceId,
     selectedAudioDeviceId,
     enableMic,
+    activePeerCalls,
+    peerIdToClientId,
+    peerBitrates,
   };
 }
 

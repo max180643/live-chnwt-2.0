@@ -7,7 +7,7 @@
 
   const { t } = useI18n();
 
-  const { roomId, streamContent, streamStatus, incomingBitrate, videoResolution, videoFramerate } = useLive();
+  const { clientId, roomId, streamContent, streamStatus, incomingBitrate, videoResolution, videoFramerate } = useLive();
 </script>
 
 <template>
@@ -20,13 +20,17 @@
     <div class="mt-5 lg:px-16">
       <Player :mediaStream="streamContent" :status="streamStatus" :autoplay="true" />
       <fieldset class="fieldset mt-2">
-        <legend class="fieldset-legend">{{ t('LIVE_STAT') }}</legend>
+        <legend class="fieldset-legend gap-x-1">
+          {{ t('LIVE_STAT') }}
+          <div class="badge badge-ghost text-xs text-orange-500 font-medium badge-sm">{{ clientId }}</div>
+        </legend>
+
         <div class="flex gap-x-4">
           <div class="flex flex-1 justify-between">
             <label>{{ t('LIVE_INCOMING_BITRATE') }}:</label>
             <span>
               <span class="font-semibold text-orange-500">{{ (incomingBitrate / 1024).toFixed(2) }}</span>
-              KB/s
+              kbps
             </span>
           </div>
           <div class="flex flex-1 justify-between">

@@ -1,5 +1,7 @@
 import type { Ref } from 'vue';
 
+import type { MediaConnection } from 'peerjs';
+
 import type { StreamStatus } from '@/types/core/stream';
 
 import type { StreamSource } from '../types/broadcast';
@@ -25,6 +27,9 @@ interface Broadcast {
   selectedVideoDeviceId: Ref<string>;
   selectedAudioDeviceId: Ref<string>;
   enableMic: Ref<boolean>;
+  activePeerCalls: Ref<Record<string, MediaConnection>>;
+  peerIdToClientId: Ref<Record<string, string>>;
+  peerBitrates: Ref<Record<string, number>>;
 }
 
 export type { Broadcast };

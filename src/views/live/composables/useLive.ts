@@ -1,4 +1,4 @@
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import type { Ref } from 'vue';
 
 import mqtt from 'mqtt';
@@ -98,7 +98,9 @@ function useLive(): Live {
             if (lastTimestamp && lastBytesReceived) {
               const timeDiff = (report.timestamp - lastTimestamp) / 1000; // seconds
               const bytesDiff = report.bytesReceived - lastBytesReceived;
-              incomingBitrate.value = (bytesDiff * 8) / timeDiff; // bits per second
+              if (timeDiff > 0) {
+                incomingBitrate.value = (bytesDiff * 8) / timeDiff; // bits per second
+              }
             }
             lastTimestamp = report.timestamp;
             lastBytesReceived = report.bytesReceived;
@@ -133,11 +135,34 @@ function useLive(): Live {
     }
   };
 
+  const disconnectAllClients = () => {
+    // Cleanup MQTT client
+    if (mqttClient.value) {
+      mqttClient.value.end(true);
+      mqttClient.value = null;
+    }
+
+    // Cleanup PeerJS client
+    if (peerClient.value) {
+      peerClient.value.destroy();
+      peerClient.value = null;
+    }
+  };
+
   onMounted(() => {
     roomId.value = getRoomId();
 
     peerClient.value = createPeerClient(clientId.value);
     mqttClient.value = createMqttClient(clientId.value);
+
+    // Call disconnectAllClients on tab close or reload
+    window.addEventListener('beforeunload', disconnectAllClients);
+  });
+
+  onUnmounted(() => {
+    disconnectAllClients();
+    // Remove beforeunload listener
+    window.removeEventListener('beforeunload', disconnectAllClients);
   });
 
   watch(
