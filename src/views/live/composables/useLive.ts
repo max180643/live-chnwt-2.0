@@ -179,7 +179,7 @@ function useLive(): Live {
       }
 
       if (peerClient.value && peer[clientId.value]?.status) {
-        listenForIncomingCalls(peerClient.value, (remoteStream: MediaStream, mediaConnection: any) => {
+        listenForIncomingCalls(clientId.value, peerClient.value, (remoteStream: MediaStream, mediaConnection: any) => {
           onStreamReceived(remoteStream, mediaConnection);
         });
       }

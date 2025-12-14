@@ -31,6 +31,7 @@
   "BROADCAST_CONNECTION": "การเชื่อมต่อ",
   "BROADCAST_PEER_CONNECTIONS": "การเชื่อมต่อเพียร์",
   "BROADCAST_UPLOAD_BITRATE": "บิตเรตอัปโหลด",
+  "BROADCAST_KICK_BUTTON": "เตะ",
   "MQTT_CLIENT_OFFLINE": "ไคลเอนต์ MQTT ออฟไลน์",
   "MQTT_CLIENT_CONNECTED": "เชื่อมต่อกับโบรกเกอร์ MQTT แล้ว",
   "MQTT_CLIENT_DISCONNECTED": "ตัดการเชื่อมต่อจากโบรกเกอร์ MQTT",

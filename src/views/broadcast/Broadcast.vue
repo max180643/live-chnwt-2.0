@@ -242,6 +242,13 @@
                 </span>
                 kbps
               </span>
+              <button
+                class="ml-2 px-2 py-0.5 rounded bg-red-500 hover:bg-red-400 text-white text-xs font-semibold"
+                @click="activePeerCalls[peerId]?.close && activePeerCalls[peerId].close()"
+                :title="t('BROADCAST_KICK_BUTTON')"
+              >
+                {{ t('BROADCAST_KICK_BUTTON') }}
+              </button>
             </li>
           </ul>
         </fieldset>

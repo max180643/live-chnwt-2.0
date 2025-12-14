@@ -31,6 +31,7 @@
   "BROADCAST_CONNECTION": "Connection",
   "BROADCAST_PEER_CONNECTIONS": "Peer Connections",
   "BROADCAST_UPLOAD_BITRATE": "Upload Bitrate",
+  "BROADCAST_KICK_BUTTON": "Kick",
   "MQTT_CLIENT_OFFLINE": "MQTT client is offline",
   "MQTT_CLIENT_CONNECTED": "Connected to MQTT broker",
   "MQTT_CLIENT_DISCONNECTED": "Disconnected from MQTT broker",

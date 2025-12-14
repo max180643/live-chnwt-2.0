@@ -23,7 +23,6 @@ function createPeerClient(clientId: string, options?: PeerJSOption): Peer {
     const peerId = getClient(clientId)?.peerId || '';
     setClient(clientId, peerId, false);
     info(t('TOAST_TITLE_INFO'), t('PEER_CLIENT_CLOSED'));
-    peerClient.destroy();
   });
 
   peerClient.on('disconnected', () => {
@@ -61,6 +60,7 @@ function callRemotePeer(peerClient: Peer, clientId: string, peerId: string, loca
 
 // Receive call from a remote peer
 function listenForIncomingCalls(
+  clientId: string,
   peerClient: Peer,
   onStreamReceived: (remoteStream: MediaStream, mediaConnection: any) => void,
 ) {
@@ -76,10 +76,14 @@ function listenForIncomingCalls(
     });
 
     call.on('close', () => {
+      const peerId = getClient(clientId)?.peerId || '';
+      setClient(clientId, peerId, false);
       info(t('TOAST_TITLE_INFO'), t('PEER_CLIENT_CLOSED'));
     });
 
     call.on('error', (err) => {
+      const peerId = getClient(clientId)?.peerId || '';
+      setClient(clientId, peerId, false);
       error(t('TOAST_TITLE_ERROR'), t('PEER_CLIENT_ERROR') + `: ${err.message || t('TOAST_MESSAGE_UNKNOWN_ERROR')}`);
       console.error(`${t('PEER_CLIENT_ERROR')}:`, err);
     });
